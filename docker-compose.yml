@@ -1,0 +1,39 @@
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: wordpress-db
+
+    restart: always
+
+    environment:
+      MYSQL_DATABASE: akc_blog
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:latest
+
+    container_name: wordpress-akc
+
+    restart: always
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./wp_dev:/var/www/html
+
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: ""
+      WORDPRESS_DB_NAME: akc_blog
+
+    depends_on:
+      - db
+
+volumes:
+  db_data:
