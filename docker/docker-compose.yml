@@ -1,0 +1,80 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: wordpress-akc-db
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - wordpress-network
+
+  wordpress:
+
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+
+    container_name: wordpress-akc
+
+    depends_on:
+      - mysql
+
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      WORDPRESS_DB_HOST: mysql:3306
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ../wp_dev/wp-content:/var/www/html/wp-content
+    networks:
+      - wordpress-network
+
+  jenkins:
+    build:
+      context: .
+      dockerfile: jenkins/Dockerfile
+
+    container_name: jenkins
+
+    restart: unless-stopped
+
+    user: root
+
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    networks:
+      - wordpress-network
+
+volumes:
+  mysql_data:
+  jenkins_home:
+
+networks:
+  wordpress-network:
